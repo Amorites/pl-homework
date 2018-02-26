@@ -48,6 +48,8 @@
 (define (eval-under-env e env)
   (cond [(var? e) 
          (envlookup env (var-string e))]
+        [(int? e)
+         e]
         [(add? e) 
          (let ([v1 (eval-under-env (add-e1 e) env)]
                [v2 (eval-under-env (add-e2 e) env)])
@@ -57,6 +59,29 @@
                        (int-num v2)))
                (error "MUPL addition applied to non-number")))]
         ;; CHANGE add more cases here
+        [(ifgreater? e)
+          (let ([v1 (eval-under-env (ifgreater-e1 e) env)]
+                [v2 (eval-under-env (ifgreater-e2 e) env)])
+            (if (and (int? v1)
+                     (int? v2)
+                     (> (int-num v1) (int-num v2)))
+                (eval-under-env (ifgreater-e3 e) env)
+                (eval-under-env (ifgreater-e4 e) env)))]
+        [(mlet? e)
+         (eval-under-env (mlet-body e) (cons (cons (mlet-var e) (mlet-e e)) env))]
+        [(call? e)
+         (if (closure? (call-funexp e))
+             (let* ([func-name (fun-nameopt (closure-fun (call-funexp e)))]
+                    [arg-name (fun-formal (closure-fun (call-funexp e)))]
+                    [func-body (fun-body (closure-fun (call-funexp e)))]
+                    [env-with-arg (cons (cons arg-name (eval-under-env (call-actual e) env)) env)]
+                    [final-env  (if func-name
+                                    (cons (cons func-name (call-funexp e)) env-with-arg)
+                                    env-with-arg)])
+               (eval-under-env func-body final-env))
+             (error "MUPL call applied to non-closure"))]
+;        [(fun? e)
+         
         [#t (error (format "bad MUPL expression: ~v" e))]))
 
 ;; Do NOT change
