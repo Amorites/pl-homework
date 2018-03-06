@@ -52,6 +52,8 @@
          e]
         [(closure? e)
          e]
+        [(fun? e)
+         e]
         [(add? e) 
          (let ([v1 (eval-under-env (add-e1 e) env)]
                [v2 (eval-under-env (add-e2 e) env)])
@@ -110,15 +112,37 @@
         
 ;; Problem 3
 
-(define (ifaunit e1 e2 e3) "CHANGE")
+(define (ifaunit e1 e2 e3)
+  (if (aunit? (eval-under-env e1 null))
+      (eval-under-env e2 null)
+      (eval-under-env e3 null)))
 
-(define (mlet* lstlst e2) "CHANGE")
+(define (mlet* lst e2)
+  (letrec ([f (lambda (prs env) (if (null? prs)
+                                  (eval-under-env e2 env)
+                                  (let* ([pr (car prs)]
+                                         [name (car pr)]
+                                         [v (eval-under-env (cdr pr) env)])
+                                    (f (cdr prs) (cons (cons name v) env)))))])
+    (f lst null)))
 
-(define (ifeq e1 e2 e3 e4) "CHANGE")
+(define (ifeq e1 e2 e3 e4)
+  (let ([_x (eval-under-env e1 null)]
+        [_y (eval-under-env e2 null)])
+    (if (= (int-num _x) (int-num _y))
+        (eval-under-env e3 null)
+        (eval-under-env e4 null))))
 
 ;; Problem 4
 
-(define mupl-map "CHANGE")
+(define mupl-map
+  (fun #f "func"
+       (fun "f" "lst"
+            (ifaunit (var "lst")
+            (aunit)
+            (apair (call (var "func") (fst (var "lst")))
+                   (call (var "f") (snd (var "lst"))))))))
+                                            
 
 (define mupl-mapAddN 
   (mlet "map" mupl-map
