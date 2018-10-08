@@ -5,8 +5,8 @@
 
 class MyPiece < Piece
   # The constant All_My_Pieces should be declared here
-  # All_My_Pieces = All_Pieces + [
-  All_My_Pieces = [
+  All_My_Pieces = All_Pieces + [
+  # All_My_Pieces = [
     rotations([[0, 0], [-1, 0], [-1, -1], [1, 0], [0, -1]]),
     [[[0, 0], [-1, 0], [1, 0], [2, 0], [3, 0]], 
     [[0, 0], [0, -1], [0, 1], [0, 2], [0, 3]]],
@@ -18,6 +18,12 @@ class MyPiece < Piece
   def self.next_piece (board)
     MyPiece.new(All_My_Pieces.sample, board)
   end
+
+  Cheating_Piece = [[[0, 0]]]
+
+  def self.next_cheating_piece (board)
+    MyPiece.new(Cheating_Piece, board)
+  end
 end
 
 class MyBoard < Board
@@ -28,6 +34,7 @@ class MyBoard < Board
     @score = 0
     @game = game
     @delay = 500
+    @cheating = false
   end
 
   def rotate_reversion
@@ -38,7 +45,12 @@ class MyBoard < Board
   end
 
   def next_piece
-    @current_block = MyPiece.next_piece(self)
+    if @cheating
+      @current_block = MyPiece.next_cheating_piece(self)
+      @cheating = false;
+    else
+      @current_block = MyPiece.next_piece(self)
+    end
     @current_pos = nil
   end
 
@@ -55,6 +67,12 @@ class MyBoard < Board
     @delay = [@delay - 2, 80].max
   end
 
+  def cheat_on_next_piece
+    if @score >= 100 and !@cheating
+      @cheating = true
+      @score -= 100
+    end
+  end 
 end
 
 class MyTetris < Tetris
@@ -71,6 +89,7 @@ class MyTetris < Tetris
   def key_bindings  
     super
     @root.bind('u', proc {@board.rotate_reversion})
+    @root.bind('c', proc {@board.cheat_on_next_piece})
   end
 
 end
